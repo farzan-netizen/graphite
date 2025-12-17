@@ -12,6 +12,9 @@
     },
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "feature-1": "cp -r .demo/feature-1/src/* src/",
+        "feature-2": "cp -r .demo/feature-2/src/* src/",
+        "feature-3": "cp -r .demo/feature-3/src/* src/"
     }
 }

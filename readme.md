@@ -1,6 +1,10 @@
 # Graphite Stacking Demo
 
-Demonstrating **stacked PRs** with [Graphite CLI](https://graphite.dev/).
+The gt CLI tool has 2 key purposes:
+1- Simplifying git commands, especially some of the sharper edges like rebasing.
+
+2- Enabling PR stacking, which can help you move faster and stay unblocked.
+
 
 ## Traditional vs Graphite
 
