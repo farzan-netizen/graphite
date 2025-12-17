@@ -1,0 +1,1297 @@
+type Action {
+  status: ActionStatus!
+}
+
+enum ActionStatus {
+  failed
+  succeeded
+}
+
+input AddAppCollaboratorInput {
+  email: String!
+}
+
+type App {
+  about: String
+  authorName: String
+  authorUrl: String
+  banner: Media
+  bannerId: ID
+  clientId: String
+  clientSecret: String
+  comingSoon: Boolean!
+  createdAt: DateTime!
+  createdById: ID
+  customCodes: AppCustomCodes
+  description: String
+  docsUrl: String
+  embedIds: [ID!]!
+  embeds: [Embed!]
+  favicon: Media
+  faviconId: ID
+  federatedSearchEnabled: Boolean!
+  federatedSearchUrl: String
+  id: ID!
+  image: Media
+  imageId: ID
+  imageIds: [ID!]!
+  images: [Media!]
+  installed: Boolean
+  interactionUrl: String
+
+  """Whether the app is a consent management platform"""
+  isConsentManagementPlatform: Boolean
+  locked: Boolean!
+  name: String!
+  network: Network
+  networkId: ID!
+  onFreePlan: Boolean!
+  privacyPolicyUrl: String
+  redirectUris: [String!]
+  requiredPermissions: [PrimaryScopes!]!
+  requiredTemplates: AppRequiredTemplates @deprecated(reason: "Apps can no longer support required templates")
+  secretToken: String
+  slug: String!
+  standing: StoreItemStanding!
+  status: StoreItemStatus!
+  termsOfServiceUrl: String
+  updatedAt: DateTime!
+  updatedById: ID
+  webhookSignSecret: String
+  webhookSubscriptions: [String!]
+  webhookUrl: String
+}
+
+type AppCollaborator {
+  addedById: ID
+  app: App
+  appId: ID!
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  type: AppCollaboratorType!
+}
+
+enum AppCollaboratorType {
+  COLLABORATOR
+  OWNER
+}
+
+type AppCustomCodes {
+  body: String
+  head: String
+}
+
+type AppEdge {
+  cursor: String!
+  node: App!
+}
+
+input AppNotificationInput {
+  networkId: String!
+  template: String!
+  templateData: [TemplateDataInput!]!
+}
+
+type AppPublication {
+  addedById: String
+  createdAt: DateTime!
+  id: String!
+  itemId: String!
+  networkId: String!
+}
+
+"""DEPRECATED"""
+type AppRequiredTemplates {
+  postTypeTemplateIds: [String!] @deprecated(reason: "This field is unused and will be removed in future versions.")
+  postTypeTemplates: [Template!] @deprecated(reason: "This field is unused and will be removed in future versions.")
+}
+
+"""DEPRECATED"""
+input AppRequiredTemplatesInput {
+  postTypeTemplateIds: [String!]
+}
+
+type AppSettings {
+  appId: String!
+  context: PermissionContext!
+  entityId: String
+  id: ID!
+  networkId: String!
+  settings: String!
+}
+
+type AppToken {
+  accessToken: String!
+  gatewayUrl: String
+}
+
+type Availability {
+  available: Boolean!
+}
+
+type BaseCustomFieldSchema {
+  archived: Boolean
+  description: String
+  externalKeys: [String!]
+  items: BaseCustomFieldSchema
+  key: String!
+  name: String!
+  properties: [BaseCustomFieldSchema!]
+  required: Boolean
+  type: CustomFieldType!
+  typeOptions: CustomFieldTypeOptions
+  validators: [CustomFieldValidator!]
+}
+
+input BaseCustomFieldSchemaInput {
+  archived: Boolean
+  description: String
+  externalKeys: [String!]
+  items: BaseCustomFieldSchemaInput
+  key: String!
+  name: String!
+  properties: [BaseCustomFieldSchemaInput!]
+  required: Boolean
+  type: CustomFieldType!
+  typeOptions: CustomFieldTypeOptionsInput
+  validators: [CustomFieldValidatorInput!]
+}
+
+type Block {
+  children: String
+  id: String!
+  name: String!
+  output: String
+  props: String
+}
+
+input BlockInput {
+  children: String
+  id: String!
+  name: String!
+  output: String
+  props: String
+}
+
+input CollaboratorInvitationInput {
+  region: String!
+  token: String!
+}
+
+input CreateAppInput {
+  about: String
+  authorName: String
+  authorUrl: String
+  bannerId: String
+  collaborators: [String!]
+  comingSoon: Boolean
+  customCodes: UpdateAppCustomCodes
+  description: String
+  docsUrl: String
+  dynamicBlocks: [CreateDynamicBlockInput!]
+  faviconId: String
+  federatedSearchEnabled: Boolean
+  federatedSearchUrl: String
+  imageId: String
+  interactionUrl: String
+  isConsentManagementPlatform: Boolean
+  name: String!
+  networkId: String!
+  onFreePlan: Boolean
+  privacyPolicyUrl: String
+  redirectUris: [String!]
+  requiredPermissions: [PrimaryScopes!]
+  requiredTemplates: AppRequiredTemplatesInput
+  shortcuts: [CreateShortcutInput!]
+  slug: String
+  standing: StoreItemStanding
+  termsOfServiceUrl: String
+  webhookSubscriptions: [String!]
+  webhookUrl: String
+}
+
+input CreateDynamicBlockInput {
+  contexts: [PermissionContext!]
+  description: String
+  faviconId: String
+  imageId: String
+  interactionUrl: String
+  key: String!
+  maxSize: DynamicBlockSize
+  name: String
+  staffOnly: Boolean
+}
+
+input CreateEmojiInput {
+  text: String!
+}
+
+input CreateImageInput {
+  contentType: String!
+  cropHeight: Int
+  cropWidth: Int
+  cropX: Int
+  cropY: Int
+  cropZoom: Float
+  height: Int
+  name: String
+  size: Float!
+  width: Int
+}
+
+input CreateNetwork {
+  """
+  Additional templates to be installed alongside the network template. This is primarily used to customize which spaces are part of the network. This should not include any network templates.
+  """
+  additionalTemplateIds: [String!]
+  domain: String
+  name: String
+  templateId: String!
+  trialPriceId: String
+  utm: UtmInput
+}
+
+input CreatePostTypeInput {
+  allowedReactions: [String!]
+  context: PostTypeContext!
+  customReactions: [CustomReactionInput!]
+  description: String
+  excludedNativeShortcuts: [String!]
+  forbiddenReactions: [String!]
+  iconId: ID
+  languageTemplate: String
+  layout: String
+  name: String!
+  nativeFieldsTemplates: NativeFieldsTemplatesInput
+  pluralName: String!
+  postFields: CustomFieldsSchemaInput
+  primaryReactionType: ReactionType!
+  recommendationsSettings: PostTypeRecommendationSettingsInput
+  selfRepliable: Boolean
+  shortContentTemplate: String
+  singleChoiceReactions: [String!]
+  slate: SlateInput
+  titleTemplate: String
+  validReplyTypesIds: [String!]
+}
+
+input CreatePostTypeTemplateInput {
+  about: String
+  appIds: [String!]
+  authorName: String
+  authorUrl: String
+  bannerId: String
+  categories: [String!]
+  comingSoon: Boolean
+  description: String
+  descriptions: String
+  faviconId: String
+  imageId: String
+  name: String!
+  networkId: String!
+  onFreePlan: Boolean
+  postTypeInput: CreatePostTypeInput!
+  privacyPolicyUrl: String
+  slug: String!
+  termsOfServiceUrl: String
+}
+
+input CreateShortcutInput {
+  context: PermissionContext!
+  description: String
+  entityType: String
+  faviconId: ID
+  interactionUrl: String
+  key: String!
+  name: String!
+  states: [ShortcutStateInput!]
+}
+
+type CustomFieldPrivacy {
+  allow: [CustomFieldPrivacyOptions!]!
+}
+
+input CustomFieldPrivacyInput {
+  allow: [CustomFieldPrivacyOptions!]!
+}
+
+enum CustomFieldPrivacyOptions {
+  ADMIN
+  OWN
+}
+
+type CustomFieldSchema {
+  archived: Boolean
+  default: String
+  description: String
+  externalKeys: [String!]
+  items: BaseCustomFieldSchema
+  key: String!
+  name: String!
+  properties: [BaseCustomFieldSchema!]
+  readPrivacy: CustomFieldPrivacy
+  required: Boolean
+  searchable: Boolean
+  settings: [CustomFieldSettings!]
+  type: CustomFieldType!
+  typeOptions: CustomFieldTypeOptions
+  validators: [CustomFieldValidator!]
+  writePrivacy: CustomFieldPrivacy
+}
+
+input CustomFieldSchemaInput {
+  archived: Boolean
+  default: String
+  description: String
+  externalKeys: [String!]
+  items: BaseCustomFieldSchemaInput
+  key: String!
+  name: String!
+  properties: [BaseCustomFieldSchemaInput!]
+  readPrivacy: CustomFieldPrivacyInput
+  required: Boolean
+  searchable: Boolean
+  settings: [CustomFieldSettingsInput!]
+  type: CustomFieldType!
+  typeOptions: CustomFieldTypeOptionsInput
+  validators: [CustomFieldValidatorInput!]
+  writePrivacy: CustomFieldPrivacyInput
+}
+
+type CustomFieldSettings {
+  key: String!
+  value: String!
+}
+
+input CustomFieldSettingsInput {
+  key: String!
+  value: String!
+}
+
+enum CustomFieldType {
+  array
+  boolean
+  date
+  number
+  object
+  relation
+  richText
+  text
+}
+
+type CustomFieldTypeOptions {
+  dateType: DateTypeOptions
+  numberType: NumberTypeOptions
+  relationType: RelationTypeOptions
+  richTextType: RichTextTypeOptions
+  textType: TextTypeOptions
+}
+
+input CustomFieldTypeOptionsInput {
+  dateType: DateTypeOptions
+  numberType: NumberTypeOptions
+  relationType: RelationTypeOptions
+  richTextType: RichTextTypeOptions
+  textType: TextTypeOptions
+}
+
+type CustomFieldValidator {
+  customErrorMessage: String
+  validation: CustomFieldValidators!
+  value: String!
+}
+
+input CustomFieldValidatorInput {
+  customErrorMessage: String
+  validation: CustomFieldValidators!
+  value: String!
+}
+
+enum CustomFieldValidators {
+  allOf
+  anyOf
+  enum
+  exclusiveMaximum
+  exclusiveMinimum
+  format
+  maxItems
+  maxLength
+  maxProperties
+  maximum
+  minItems
+  minLength
+  minProperties
+  minimum
+  multipleOf
+  not
+  oneOf
+  pattern
+  uniqueItems
+}
+
+input CustomFieldsSchemaInput {
+  fields: [CustomFieldSchemaInput!]!
+}
+
+input CustomReactionInput {
+  activeColor: String
+  activeGlyphId: String
+  activeName: String
+  color: String
+  glyphId: String!
+  key: String!
+  name: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+enum DateTypeOptions {
+  date
+  datetime
+}
+
+enum DefaultDynamicBlockKeys {
+  settings
+}
+
+input DeleteNetworkInput {
+  networkId: String!
+}
+
+type DynamicBlock {
+  about: String
+  app: App
+  appId: String!
+  contexts: [PermissionContext!]
+  createdAt: DateTime!
+  createdById: ID
+  description: String
+  favicon: Media
+  faviconId: ID
+  id: ID!
+  image: Media
+  imageId: ID
+  interactionUrl: String
+  key: String!
+  maxSize: DynamicBlockSize!
+  name: String!
+  staffOnly: Boolean!
+  updatedAt: DateTime!
+  updatedById: ID
+}
+
+type DynamicBlockEdge {
+  cursor: String!
+  node: DynamicBlock!
+}
+
+enum DynamicBlockSize {
+  full
+  lg
+  md
+  sm
+  xl
+}
+
+type EmailValidationResult {
+  suggestion: String
+  valid: Boolean!
+}
+
+type Embed {
+  author: String
+  author_url: String
+  description: String
+  html: String
+  id: ID!
+  options: String
+  provider_name: String
+  thumbnail_height: String
+  thumbnail_url: String
+  thumbnail_width: String
+  title: String
+  type: String
+  url: String!
+}
+
+input EmbedInput {
+  options: String
+  url: String!
+}
+
+type Emoji {
+  id: ID!
+  text: String!
+}
+
+input EnableDefaultDynamicBlockInput {
+  contexts: [PermissionContext!]
+  interactionUrl: String
+}
+
+enum EventNoun {
+  APP
+  APP_INSTALLATION
+  BADGE
+  COLLECTION
+  CUSTOM
+  EMBED
+  EVENT
+  EVENT_REGISTRATION
+  EXTRA_PROPERTY
+  IMPORT_REQUEST
+  LIMITS
+  MEDIA
+  MEMBER
+  MEMBER_BADGE
+  MEMBER_INVITATION
+  MEMBER_LAST_SEEN
+  MEMBER_SESSION
+  MEMBER_STATS
+  MODERATION
+  NETWORK
+  NETWORK_STATS
+  ORGANIZATION
+  PAGE_CUSTOM_RESPONSE
+  PLAN
+  POST
+  POST_TYPE
+  PRODUCT
+  PRODUCT_PRICE_SYNC
+  REACTION
+  ROLE
+  SHORTCUT
+  SPACE
+  SPACE_JOIN_REQUEST
+  SPACE_MEMBERSHIP
+  SPACE_NETWORK_ROLE
+  SPACE_POST_TYPE
+  SPACE_ROLE
+  SSO
+  SSO_MEMBERSHIP
+  STAFF_STATS
+  SUBSCRIPTION
+  SYNC_EVENT
+  TAG
+  TRACKER
+}
+
+type EventType {
+  description: String!
+  name: String!
+  noun: EventNoun!
+  requiredScope: String!
+  shortDescription: String!
+  verb: EventVerb!
+}
+
+enum EventVerb {
+  ACCEPTED
+  ADDED
+  BANNED
+  BLOCKED
+  CANCELED
+  CLICKED
+  CREATED
+  CUSTOM
+  DELETED
+  EXPIRED
+  FAILED
+  FOLLOWED
+  GENERATED
+  HIDDEN
+  IMPRESSION
+  INSTALLED
+  LOGGED_IN
+  MARKED_FOR_PURGE
+  NOT_ASSIGNED
+  PERMITTED
+  PING
+  PINGED
+  PINNED
+  PUBLISHED
+  PURGED
+  RECEIVED
+  REGISTERED
+  REJECTED
+  REMOVED
+  RESENT
+  REVOKED
+  SENT
+  SIGNED_UP
+  SUCCEEDED
+  SUSPENDED
+  UNBLOCKED
+  UNFOLLOWED
+  UNHIDDEN
+  UNINSTALLED
+  UNPINNED
+  UNPUBLISHED
+  UNSUSPENDED
+  UNUSED
+  UNVERIFIED
+  UPDATED
+  USED
+  VERIFIED
+  VIEWED
+}
+
+type File {
+  downloadUrl: String!
+  extension: String!
+  id: ID!
+  name: String
+  size: Int
+  url: String!
+}
+
+type GlobalMember {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  joinedReferralProgram: Boolean!
+  locale: String!
+  name: String
+  profilePicture: Media
+  profilePictureId: ID
+  referrerCode: String
+  updatedAt: DateTime!
+}
+
+type GlobalToken {
+  accessToken: String!
+  email: String!
+}
+
+input GlobalTokenInput {
+  email: String!
+  referrerCode: String
+  verificationCode: String!
+}
+
+type Glyph {
+  id: ID!
+  text: String!
+  variant: GlyphMediaVariant!
+}
+
+enum GlyphMediaVariant {
+  emoji
+  icon
+}
+
+type HubContent {
+  attachmentIds: [ID!]!
+  attachments: [File!]
+  createdAt: DateTime!
+  description: String
+  embedIds: [ID!]!
+  embeds: [Embed!]
+  fields: [HubContentCustomField!]
+  id: ID!
+  imageIds: [ID!]!
+  images: [Media!]
+  language: String
+
+  """Whether the post is locked"""
+  locked: Boolean!
+  postTypeId: ID!
+  publishedAt: DateTime
+  slug: String
+  tagIds: [String!]
+  thumbnail: Media
+  thumbnailId: String
+  title: String
+  updatedAt: DateTime!
+}
+
+type HubContentCustomField {
+  key: String!
+  relationEntities: HubContentCustomFieldRelation
+  value: String
+}
+
+type HubContentCustomFieldRelation {
+  medias: [Media!]!
+}
+
+type Image {
+  cropHeight: Int
+  cropWidth: Int
+  cropX: Int!
+  cropY: Int!
+  cropZoom: Float!
+  dominantColorHex: String
+  downloadUrl: String!
+  dpi: Float
+  height: Float
+  id: ID!
+  name: String
+  url: String!
+  urls: MediaUrls
+  width: Float
+}
+
+type InvitationAcceptResult {
+  """Access token won’t be provided if there’s an error with the invitation"""
+  accessToken: String
+  email: String
+
+  """
+  In case of an error with invitation, message will contain the error description.
+  """
+  errorMessage: String
+  networkId: String
+  networkPath: String
+  status: ActionStatus!
+}
+
+input LoginNetwork {
+  networkId: String!
+}
+
+input LoginWithSsoCodeInput {
+  code: String
+  hd: String
+  oauth_token: String
+  oauth_verifier: String
+  prompt: String
+  referrer_code: String
+  scope: String
+  state: String
+}
+
+union Media = Emoji | File | Glyph | Image
+
+type MediaUrls {
+  full: String!
+  large: String!
+  medium: String!
+  small: String!
+  thumb: String!
+}
+
+type Mutation {
+  acceptCollaboratorInvitation(input: CollaboratorInvitationInput!): InvitationAcceptResult!
+  addAppCollaborator(appId: String!, input: AddAppCollaboratorInput!): AppCollaborator!
+  createApp(input: CreateAppInput!): App!
+  createDynamicBlock(appId: ID!, input: CreateDynamicBlockInput!): DynamicBlock!
+  createEmojis(input: [CreateEmojiInput!]!): [Emoji!]! @deprecated(reason: "Use Glyphs instead, just update the media id with `emoji/...`")
+  createImages(input: [CreateImageInput!]!): [SignedUrl!]!
+  createNetwork(input: CreateNetwork!): NetworkOtp!
+  createPostTypeTemplate(input: CreatePostTypeTemplateInput!): Template!
+  createShortcut(appId: String!, input: CreateShortcutInput!): Shortcut!
+  deleteApp(id: ID!): Action!
+  deleteAppSetting(context: PermissionContext!, entityId: ID, networkId: ID!): AppSettings!
+  deleteDynamicBlock(appId: ID!, blockId: ID!): Action!
+  deleteNetwork(input: DeleteNetworkInput!): Action!
+  deleteShortcut(appId: String!, id: ID!): Action!
+  disableDefaultDynamicBlock(appId: ID!, key: DefaultDynamicBlockKeys!): Action!
+  enableDefaultDynamicBlock(appId: ID!, input: EnableDefaultDynamicBlockInput!, key: DefaultDynamicBlockKeys!): DynamicBlock!
+  joinReferralProgram: GlobalMember!
+  publishApp(id: ID!): Action!
+  publishAppPrivately(appId: ID!, networkId: ID!): AppPublication!
+  regenerateClientSecret(appId: ID!): App!
+  removeAppCollaborator(appId: String!, collaboratorId: String!): Action!
+  requestGlobalTokenCode(input: RequestGlobalTokenInput!): Action!
+  resendGlobalTokenCode(input: RequestGlobalTokenInput!): Action!
+  sendNotifications(input: AppNotificationInput!): SendNotifications!
+  testAppWebhook(appId: ID!, input: TestAppWebhookInput!): Action!
+  unPublishAppPrivately(appId: ID!, networkId: ID!): Action!
+  unpublishApp(id: ID!): Action!
+  updateApp(id: ID!, input: UpdateAppInput!): App!
+  updateAppSetting(context: PermissionContext!, entityId: ID, networkId: ID!, settings: String!): AppSettings!
+  updateAuthMember(input: UpdateGlobalMemberInput!): GlobalMember!
+  updateDynamicBlock(appId: ID!, blockId: ID!, input: UpdateDynamicBlockInput!): DynamicBlock!
+  updateShortcut(appId: String!, id: ID!, input: UpdateShortcutInput!): Shortcut!
+  validateEmail(input: RequestGlobalTokenInput!): EmailValidationResult!
+}
+
+input NativeFieldsTemplatesInput {
+  description: String
+  thumbnailId: String
+  title: String
+}
+
+type Network {
+  activeTheme: Theme
+  aliases: [String!]!
+  createdAt: DateTime!
+  description: String
+  domain: String!
+  domainSubfolder: String
+  favicon: Media
+  faviconId: ID
+  gatewayUrl: String!
+  id: ID!
+  images: NetworkImages
+  isOwner: Boolean!
+  logo: Media
+  logoId: ID
+  membership: NetworkMembership!
+  name: String!
+  overUsedAt: DateTime
+  planName: String!
+  status: NetworkStatus!
+  visibility: NetworkVisibility!
+  willUnpublishAt: DateTime
+}
+
+type NetworkEdge {
+  cursor: String!
+  node: Network!
+}
+
+type NetworkImages {
+  darkFavicon: Media
+  darkLogo: Media
+  darkMobileLogo: Media
+  lightFavicon: Media
+  lightLogo: Media
+  lightMobileLogo: Media
+}
+
+enum NetworkMembership {
+  inviteOnly
+  open
+}
+
+type NetworkOtp {
+  domain: String!
+
+  """
+  The path to the network. This property takes subfolder settings into account.
+  """
+  networkPath: String!
+  otp: String!
+}
+
+enum NetworkStatus {
+  archived
+  published
+  unpublished
+}
+
+enum NetworkVisibility {
+  private
+  public
+}
+
+enum NumberTypeOptions {
+  integer
+  number
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+}
+
+type PaginatedApp {
+  edges: [AppEdge!]
+  nodes: [App!]
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type PaginatedDynamicBlock {
+  edges: [DynamicBlockEdge!]
+  nodes: [DynamicBlock!]
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type PaginatedShortcut {
+  edges: [ShortcutEdge!]
+  nodes: [Shortcut!]
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type PaginatedTemplate {
+  edges: [TemplateEdge!]
+  nodes: [Template!]
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+enum PermissionContext {
+  EVENT
+  MEMBER
+  NETWORK
+  POST
+  SPACE
+}
+
+enum PostTypeContext {
+  post
+  reply
+}
+
+input PostTypeRecommendationSettingsInput {
+  fields: [String!]!
+  sourceSelf: Boolean
+  sourceSpaces: [String!]
+}
+
+enum PrimaryScopes {
+  CreateContent
+  DeleteAuthMember
+  DeleteContent
+  DeleteMember
+  DeleteNetwork
+  FindAuthMember
+  FindContent
+  FindNetwork
+  FullAccess
+  InviteMember
+  JoinNetwork
+  UpdateAuthMember
+  UpdateBilling
+  UpdateContent
+  UpdateMember
+  UpdateModeration
+  UpdateNetwork
+  UpdateNetworkTemplate
+  UpdateReport
+  ViewAuthMember
+  ViewContent
+  ViewMember
+  ViewNetwork
+  ViewReport
+}
+
+type Query {
+  app(id: ID, slug: String): App!
+  appCollaborators(appId: String!): [AppCollaborator!]!
+  appPublications(appId: ID!): [AppPublication!]!
+  appSettings(context: PermissionContext!, entityId: ID, networkId: ID!): AppSettings!
+  apps(after: String, before: String, limit: Int!, offset: Int, reverse: Boolean, standing: StoreItemStanding, status: StoreItemStatus): PaginatedApp!
+  authMember: GlobalMember!
+  checkAppSlugAvailability(slug: String!): Availability!
+  dynamicBlock(appId: ID!, blockId: ID!): DynamicBlock!
+  dynamicBlocks(after: String, appId: ID!, before: String, limit: Int!, offset: Int, reverse: Boolean): PaginatedDynamicBlock!
+  embed(input: EmbedInput!): Embed!
+  eventTypes: [EventType!]!
+  globalToken(input: GlobalTokenInput!): GlobalToken!
+  limitedToken(context: PermissionContext, entityId: String, impersonateMemberId: String, networkId: String!): AppToken!
+  loginWithSsoCode(input: LoginWithSsoCodeInput!): GlobalToken!
+  media(id: ID!): Media!
+  networkOtp(input: LoginNetwork!): NetworkOtp!
+  networks: [Network!]!
+  shortcut(appId: String!, id: String!): Shortcut!
+  shortcuts(after: String, appId: String!, before: String, limit: Int!, offset: Int, reverse: Boolean): PaginatedShortcut!
+  ssoUrl(input: SsoUrlInput!): SsoUrl!
+  templates(after: String, before: String, entityTypes: [TemplateEntityType!], limit: Int!, offset: Int, reverse: Boolean, status: StoreItemStatus): PaginatedTemplate!
+}
+
+enum ReactionType {
+  EMOJI_BASE
+  LIKE_BASE
+  VOTE_BASE
+}
+
+enum RelationTypeOptions {
+  Media
+  Member
+  Post
+  Space
+  Tag
+}
+
+input RequestGlobalTokenInput {
+  captchaToken: String
+  email: String!
+}
+
+enum RichTextTypeOptions {
+  html
+  markup
+}
+
+type SendNotifications {
+  createdAt: DateTime!
+  id: String!
+  networkId: String!
+  template: String!
+  templateData: [TemplateData!]!
+  updatedAt: DateTime!
+}
+
+type Shortcut {
+  appId: ID!
+  context: PermissionContext!
+  createdAt: DateTime!
+  createdById: ID
+  description: String
+  entityType: String
+  favicon: Media
+  faviconId: ID
+  id: ID!
+  interactionUrl: String
+  key: String!
+  name: String!
+  states: [ShortcutState!]
+  updatedAt: DateTime!
+  updatedById: ID
+}
+
+type ShortcutEdge {
+  cursor: String!
+  node: Shortcut!
+}
+
+type ShortcutState {
+  description: String
+  favicon: Media
+  faviconId: ID
+  name: String
+  state: String!
+}
+
+input ShortcutStateInput {
+  description: String
+  faviconId: ID
+  name: String
+  state: String!
+}
+
+type SignedUrl {
+  fields: String!
+  mediaDownloadUrl: String!
+  mediaId: ID!
+  mediaUrl: String!
+  signedUrl: String!
+  urls: MediaUrls
+}
+
+type Slate {
+  blocks: [Block!]!
+  id: String
+  restrictions: SlateRestrictions
+  rootBlock: String!
+}
+
+input SlateInput {
+  blocks: [BlockInput!]!
+  rootBlock: String!
+}
+
+type SlateRestrictions {
+  lockedChildrenBlocks: [String!]
+  nonEditableBlocks: [String!]
+  nonRemovableBlocks: [String!]
+}
+
+type SsoUrl {
+  url: String!
+}
+
+input SsoUrlInput {
+  callbackUrl: String!
+}
+
+enum StoreItemStanding {
+  OFFICIAL
+  REGULAR
+  VERIFIED
+}
+
+enum StoreItemStatus {
+  DELETED
+  PRIVATE
+  PUBLIC
+}
+
+type Template {
+  about: String
+  appIds: [String!]!
+  apps: [App!]
+  authorName: String
+  authorUrl: String
+  banner: Media
+  bannerId: ID
+  categories: [String!]!
+  comingSoon: Boolean!
+  createdAt: DateTime!
+  createdById: ID
+  description: String
+  embedIds: [ID!]!
+  embeds: [Embed!]
+  entityProperties: String!
+  entityType: TemplateEntityType!
+  favicon: Media
+  faviconId: ID
+  hubContent: HubContent
+  hubContentId: String
+  id: ID!
+  image: Media
+  imageId: ID
+  imageIds: [ID!]!
+  images: [Media!]
+  installed: Boolean
+  name: String!
+  network: Network
+  networkId: ID!
+  onFreePlan: Boolean!
+  privacyPolicyUrl: String
+  requiredTemplateIds: [String!]!
+  requiredTemplates: [Template!]
+  slate: Slate
+  slug: String!
+  standing: StoreItemStanding!
+  status: StoreItemStatus!
+  termsOfServiceUrl: String
+  updatedAt: DateTime!
+  updatedById: ID
+}
+
+type TemplateData {
+  data: String!
+  memberId: String!
+  preHeaderText: String!
+  subject: String!
+}
+
+input TemplateDataInput {
+  data: String!
+  memberId: String!
+  preHeaderText: String!
+  subject: String!
+}
+
+type TemplateEdge {
+  cursor: String!
+  node: Template!
+}
+
+enum TemplateEntityType {
+  Collection
+  Network
+  Post
+  PostType
+  Space
+  SpaceContentModule
+  SpacePostType
+  Tag
+}
+
+input TestAppWebhookInput {
+  webhookUrl: String!
+}
+
+enum TextTypeOptions {
+  fullText
+  shortText
+}
+
+type Theme {
+  colorTokens: ThemeColorTokens
+  colors: ThemeColors
+  id: String!
+  name: String
+  typography: [ThemeToken!]
+}
+
+type ThemeColor {
+  key: String!
+  weights: [ThemeToken!]!
+}
+
+type ThemeColorToken {
+  key: String!
+  value: String!
+}
+
+type ThemeColorTokens {
+  dark: [ThemeColorToken!]
+  light: [ThemeColorToken!]
+}
+
+type ThemeColors {
+  dark: [ThemeColor!]
+  light: [ThemeColor!]
+}
+
+type ThemeToken {
+  key: String!
+  value: String!
+}
+
+input UpdateAppCustomCodes {
+  body: String
+  head: String
+}
+
+input UpdateAppInput {
+  about: String
+  authorName: String
+  authorUrl: String
+  bannerId: String
+  collaborators: [String!]
+  comingSoon: Boolean
+  customCodes: UpdateAppCustomCodes
+  description: String
+  docsUrl: String
+  dynamicBlocks: [CreateDynamicBlockInput!]
+  faviconId: String
+  federatedSearchEnabled: Boolean
+  federatedSearchUrl: String
+  imageId: String
+  interactionUrl: String
+  isConsentManagementPlatform: Boolean
+  name: String
+  onFreePlan: Boolean
+  privacyPolicyUrl: String
+  redirectUris: [String!]
+  requiredPermissions: [PrimaryScopes!]
+  requiredTemplates: AppRequiredTemplatesInput
+  shortcuts: [CreateShortcutInput!]
+  slug: String
+  standing: StoreItemStanding
+  termsOfServiceUrl: String
+  webhookSubscriptions: [String!]
+  webhookUrl: String
+}
+
+input UpdateDynamicBlockInput {
+  contexts: [PermissionContext!]
+  description: String
+  faviconId: String
+  imageId: String
+  interactionUrl: String
+  key: String
+  maxSize: DynamicBlockSize
+  name: String
+  staffOnly: Boolean
+}
+
+input UpdateGlobalMemberInput {
+  locale: String
+  name: String
+  profilePictureId: ID
+}
+
+input UpdateShortcutInput {
+  context: PermissionContext
+  description: String
+  entityType: String
+  faviconId: ID
+  interactionUrl: String
+  key: String
+  name: String
+  states: [ShortcutStateInput!]
+}
+
+input UtmInput {
+  gclid: String
+  utmCampaign: String
+  utmContent: String
+  utmMedium: String
+  utmSource: String
+  utmTerm: String
+}

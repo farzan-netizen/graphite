@@ -1,0 +1,54 @@
+#######################################################
+# Build Variables
+#######################################################
+.env.nexus-signup.build:
+  variables:
+    APP_NAME: nexus-signup
+    BUILD_VERSION: $NEXUS_SIGNUP_BUILD_VERSION
+    PUBLIC_PATH: $CDN_DOMAIN/nexus-signup/$NEXUS_SIGNUP_BUILD_VERSION/
+
+#######################################################
+# Deployment Variables
+# - .common variables are used to publish images to docker repos, which
+#   should not contain values that are specific to each environment, but must be
+#   listed for sake of documentation as empty values.
+#######################################################
+.env.nexus-signup.common:
+  extends:
+    - .env.nexus-signup.build
+  variables:
+    SERVICE_NAME: nexus-signup
+    SERVICE_VERSION: nexus-signup-$NEXUS_SIGNUP_BUILD_VERSION
+    SERVICE_ENVIRONMENT: ""
+    SERVICE_REGION: ""
+    DOCKER_FILE: $CI_PROJECT_DIR/stack/docker/Dockerfile
+
+.env.nexus-signup.dev:
+  environment: dev
+  extends:
+    - .env.nexus-signup.common
+  variables:
+    SERVICE_IMAGE_TAG: $IMAGE_REPO:nexus-signup-$NEXUS_SIGNUP_BUILD_VERSION
+    SERVICE_ENVIRONMENT: dev
+    SERVICE_REGION: us
+
+.env.nexus-signup.prod:
+  environment: prod
+  extends:
+    - .env.nexus-signup.common
+  variables:
+    SERVICE_IMAGE_TAG: $IMAGE_REPO_PROD:nexus-signup-$NEXUS_SIGNUP_BUILD_VERSION
+    SERVICE_ENVIRONMENT: prd
+    SERVICE_REGION: us
+
+.env.nexus-signup.review:
+  environment: review/$CI_COMMIT_REF_NAME
+  extends:
+    - .env.nexus-signup.common
+  variables:
+    REVIEW_APP_NAME: $CI_ENVIRONMENT_SLUG
+    SERVICE_IMAGE_TAG: $IMAGE_REPO:nexus-signup-$CI_COMMIT_SHORT_SHA
+    SERVICE_ENVIRONMENT: dev
+    SERVICE_REGION: us
+    LOCAL_DEV_ADDRESS: $CI_ENVIRONMENT_SLUG.feature.bettermode.dev
+

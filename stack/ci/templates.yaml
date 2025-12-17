@@ -1,0 +1,170 @@
+# ╭─ Global Templates ────────────────────────────────╮
+# │
+.commonProperty:
+  interruptible: true
+  image: registry.gitlab.com/tribeplatform/tribe-api/node22-rockylinux9/amd64:20250724-2
+  tags:
+    - sweetops_runner
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+# │
+# ├───────────────────────────────────────────────────
+# │
+.testTemplate:
+  needs:
+    - prepare:env
+    - job: prepare:cache
+      artifacts: false
+  extends:
+    - .commonProperty
+    - .onlyPullCache
+  allow_failure: false
+
+# │
+# ├───────────────────────────────────────────────────
+# │
+.publishTemplate:
+  stage: publish
+  extends:
+    - .commonProperty
+    - .disableCache
+# │
+# ├───────────────────────────────────────────────────
+# │
+.publishAssetsTemplate:
+  extends:
+    - .publishTemplate
+  image:
+    name: amazon/aws-cli
+    entrypoint:
+      - ""
+  tags:
+    - deployment
+  variables:
+    LOCAL_BUILD_PATH: ""
+    REMOTE_BUILD_PATH: ""
+    BUCKET: $AWS_S3_BUCKET
+  script:
+    - |
+      if [[ -z $LOCAL_BUILD_PATH ]] || [[ -z $REMOTE_BUILD_PATH ]]; then
+        echo "Missing variables:"
+        echo " -> LOCAL_BUILD_PATH: $LOCAL_BUILD_PATH"
+        echo " -> REMOTE_BUILD_PATH: $REMOTE_BUILD_PATH"
+        exit 1
+      else
+        echo " -> Local Build Path: $LOCAL_BUILD_PATH"
+        echo " -> Remote Build Path: $REMOTE_BUILD_PATH"
+      fi
+    - aws s3 sync $CI_PROJECT_DIR$LOCAL_BUILD_PATH s3://${BUCKET}$REMOTE_BUILD_PATH --acl bucket-owner-full-control --cache-control "max-age=31536000, public"
+# │
+# ├───────────────────────────────────────────────────
+# │
+.deployCommonProperty:
+  image:
+    name: $OPS_IMAGE
+    entrypoint:
+      - ''
+  needs:
+    - job: build:image
+      artifacts: false
+  extends:
+    - .commonProperty
+    - .disableCache
+  tags:
+    - deployment
+  variables:
+    GIT_STRATEGY: none
+
+# │
+# ├───────────────────────────────────────────────────
+# │ In order for promote action to become available,
+# │ all packages should have successful build and already
+# | published, even though each will have their own
+# | promote actions. We don't want to tag unstable bundles.
+# │
+.promoteTemplate:
+  stage: promote
+  resource_group: nexus-signup-promotion
+  tags:
+    - kubernetes
+  extends:
+    - .gitOpsTemplate
+    - .disableCache
+  dependencies: []
+  script:
+    - |
+      if [[ -z $IS_HOTFIX ]]; then
+        ./scripts/release.sh -p nexus-signup
+      else
+        git fetch origin $CI_COMMIT_REF_NAME:$CI_COMMIT_REF_NAME
+        git checkout $CI_COMMIT_REF_NAME
+      fi
+    - |
+      ./scripts/release.sh -c || exit_code=$?
+      exit $exit_code
+  allow_failure:
+    exit_codes:
+      - 128 # Tag already exists
+      - 10  # Unable to close merge request
+# │
+# ├───────────────────────────────────────────────────
+# │
+.notifyTemplate:
+  stage: notify
+  tags:
+    - kubernetes
+  image:
+    name: fsha/release-utils:1.2.1
+    entrypoint: ["/bin/bash", "-c"]
+  cache: {}
+  variables:
+    NOTIFY_TOOL_PATH: ./tools/notify
+    JOB_CONTEXT: "$CI_PROJECT_ID,$CI_PIPELINE_ID"
+    PRODUCT_NAME: "" # See packages.list for available values
+    CHANGELOG: ""
+    RELEASE_CHANNEL: ""
+    ACTIONS: "" # An array in form of jobName|targetEnv|label
+    # DEPLOYED_VERSION: "" # Must be passed from deploy jobs
+    # SKIP_NOTIFY: ""
+  before_script:
+    - cd $NOTIFY_TOOL_PATH
+    - npm i
+    - |
+      if [[ $SKIP_NOTIFY ]]; then
+        echo "SKIP_NOTIFY is set. Skipping..."
+        exit 0
+      fi
+      if [[ $IS_TAG ]]; then
+        # Override the current value if in a tag pipeline
+        export CHANGELOG=$(bash scripts/utils/get-package-changelog.sh -p "$PRODUCT_NAME" -l)
+      fi
+  script:
+    - |
+      actionsParam=()
+      acts=$(echo "$ACTIONS" | tr ',' '\n')
+      while read -r act; do actionsParam+=("${act}"); done <<< "$acts"
+      node notify.js -p "$PRODUCT_NAME" -v "$DEPLOYED_VERSION" -a "$CI_COMMIT_AUTHOR" -t "$CI_COMMIT_TITLE" -u "$CI_PIPELINE_URL" -n "$CHANGELOG" -c "$RELEASE_CHANNEL" -j "$JOB_CONTEXT" --actions "${actionsParam[@]}"
+  allow_failure: true
+  cache:
+    key:
+      files:
+        - $NOTIFY_TOOL_PATH/package-lock.json
+    paths:
+      - $NOTIFY_TOOL_PATH/node_modules/
+    policy: pull-push
+# │
+# ├───────────────────────────────────────────────────
+# │
+.gitOpsTemplate:
+  image: fsha/release-utils:1.0.1
+  before_script:
+    - git config --global user.name 'Tribe SysOps'
+    - git config --global user.email 'devops@tribe.so'
+    - export PUSH_REPO=$(echo "$CI_REPOSITORY_URL" | sed -e "s|.*@\(.*\)|\1|" -e "s|/|/|")
+    - git remote set-url origin https://tribe-sys-v2:$DEPLOY_TOKEN@$PUSH_REPO
+# │
+# ╰───────────────────────────────────────────────────╯
+

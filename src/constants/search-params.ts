@@ -1,0 +1,17 @@
+export enum SearchParams {
+  Referrer = 'referrer',
+  Hd = 'hd',
+  ReferrerUri = 'referrer_uri',
+  Redirect = 'redirect',
+  RedirectUri = 'redirect_uri',
+  OpType = 'opType',
+  Code = 'code',
+  Prompt = 'prompt',
+  Scope = 'scope',
+  State = 'state',
+  OauthToken = 'oauth_token',
+  OauthVerifier = 'oauth_verifier',
+  Message = 'message',
+  VerificationCode = 'verificationCode',
+  Email = 'email',
+}

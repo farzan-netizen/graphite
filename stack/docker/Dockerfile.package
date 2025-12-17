@@ -1,0 +1,25 @@
+ARG BASE_IMAGE
+
+FROM $BASE_IMAGE
+
+ENV PATH=/bm/node_modules/.bin:$PATH
+
+RUN mkdir -p /bm/app
+
+WORKDIR /bm/app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Install pnpm if not available
+RUN if ! command -v pnpm >/dev/null 2>&1; then \
+      npm install -g pnpm@10.20.0; \
+    else \
+      echo "pnpm already installed, skipping global install"; \
+    fi
+
+# Install packages
+RUN pnpm install --frozen-lockfile
+
+CMD [ "/bin/bash" ]
+

@@ -1,0 +1,168 @@
+/* Sidebar Title Styles */
+.sidebar-title {
+  font-family: "Manrope", "Manrope Placeholder", sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.96px;
+  line-height: 34px;
+}
+
+/* Sidebar Description Styles */
+.sidebar-description {
+  font-family: "Manrope", "Manrope Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.014em;
+  line-height: 1.4em;
+  color: #666;
+}
+
+.dark-mode .sidebar-description {
+  color: rgb(206 207 210); /* gray-300 for dark mode - closer to title */
+}
+
+.sidebar-description strong,
+.sidebar-description b {
+  font-weight: 700;
+}
+
+/* Main Content Title Styles */
+.main-content-title {
+  font-family: "Manrope", "Manrope Placeholder", sans-serif;
+  letter-spacing: -0.96px;
+  font-weight: 800;
+}
+
+/* Main Content Description Styles */
+.main-content-description {
+  font-family: "Manrope", "Manrope Placeholder", sans-serif;
+  letter-spacing: -0.014em;
+  font-weight: 500;
+}
+
+.dark-mode .main-content-description {
+  color: rgb(206 207 210); /* gray-300 for dark mode - closer to title */
+}
+
+/* Top Slot Styles (for greetings like "Nice to meet you...") */
+.main-content-top-slot {
+  font-family: "Manrope", "Manrope Placeholder", sans-serif;
+  color: #666; /* same as description in light mode */
+}
+
+.main-content-top-slot * {
+  color: inherit !important; /* override text-tertiary and other color classes */
+}
+
+.dark-mode .main-content-top-slot {
+  color: rgb(206 207 210); /* gray-300 for dark mode - same as description */
+}
+
+.dark-mode .main-content-top-slot * {
+  color: inherit !important; /* override text-tertiary and other color classes */
+}
+
+/* Selected item background */
+.selected-item-bg {
+  background-color: color-mix(in oklab, var(--color-brand-600) 15%, transparent);
+}
+
+.dark-mode .selected-item-bg {
+  background-color: color-mix(in oklab, var(--color-brand-600) 20%, transparent);
+}
+
+/* Asterisk/Star color - brand-900 in light, brand-600 in dark */
+.text-brand-asterisk {
+  color: var(--color-brand-800);
+}
+
+.dark-mode .text-brand-asterisk {
+  color: var(--color-brand-600);
+}
+
+/* Disabled button styles in dark mode */
+.dark-mode button:disabled.bg-brand-solid,
+.dark-mode button[data-disabled="true"].bg-brand-solid {
+  background-color: var(--color-gray-700) !important;
+}
+
+.dark-mode button:disabled .text-brand-solid,
+.dark-mode button[data-disabled="true"] .text-brand-solid {
+  color: var(--color-gray-400) !important;
+}
+
+.dark-mode button:disabled *[data-icon],
+.dark-mode button[data-disabled="true"] *[data-icon] {
+  color: var(--color-gray-400) !important;
+}
+
+
+/* Recommended plan card gradient */
+.recommended-plan-gradient {
+  background: linear-gradient(rgba(10, 191, 106, 0.14) 0%, rgba(10, 192, 108, 0.09) 50.1988%, rgba(255, 255, 255, 0) 100%) !important;
+  background-color: transparent !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Plan card CTA styles */
+.plan-card-cta-primary {
+  background-color: #000 !important;
+  color: #fff !important;
+  border: 1px solid #000 !important;
+  box-shadow: none !important;
+  --tw-ring-width: 0 !important;
+}
+
+.dark-mode .plan-card-cta-primary {
+  background-color: rgba(10, 192, 108, 0.15) !important;
+  color: #0AC06C !important;
+  border: 1px solid #0AC06C !important;
+}
+
+.dark-mode .plan-card-cta-primary:hover {
+  background-color: rgba(10, 192, 108, 0.25) !important;
+  border-color: #0AC06C !important;
+}
+
+.dark-mode .plan-card-cta-primary *[data-icon] {
+  color: #0AC06C !important;
+}
+
+.plan-card-cta-secondary {
+  background-color: transparent !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: var(--color-text-primary) !important;
+  box-shadow: none !important;
+  --tw-ring-width: 0 !important;
+}
+
+.dark-mode .plan-card-cta-secondary {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.plan-card-cta-recommended {
+  background-color: var(--color-brand-600) !important;
+  color: #fff !important;
+  border: 1px solid var(--color-brand-600) !important;
+  box-shadow: none !important;
+  --tw-ring-width: 0 !important;
+}
+
+.plan-card-cta-recommended *[data-icon] {
+  color: #fff !important;
+}
+
+/* Remove ring and shadow from all plan card CTAs */
+.plan-card-cta-primary,
+.plan-card-cta-secondary,
+.plan-card-cta-recommended {
+  box-shadow: none !important;
+  --tw-shadow: 0 0 #0000 !important;
+  --tw-shadow-colored: 0 0 #0000 !important;
+  --tw-ring-offset-width: 0px !important;
+  --tw-ring-offset-color: #fff !important;
+  --tw-ring-color: transparent !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+}
+

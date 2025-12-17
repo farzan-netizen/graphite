@@ -1,0 +1,336 @@
+include:
+  - local: 'stack/ci/cache.yaml'
+  - local: 'stack/ci/templates.yaml'
+  - local: 'stack/ci/environments.yaml'
+  # - local: 'stack/ci/.gitlab-ci.yml'
+
+stages:
+  - pre
+  - build
+  - test
+  - publish
+  - deploy:dev
+  - deploy:prod
+# ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍ Variables ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍
+variables:
+  GIT_DEPTH: 1
+  GIT_STRATEGY: clone
+  SERVICE: 'nexus-signup'
+  AWS_REGION: 'us-east-1'
+  AWS_IMAGE_REGISTRY: '292539507498.dkr.ecr.us-east-1.amazonaws.com'
+  NEXUS_IMAGE_TAG: nexus-signup:$CI_COMMIT_SHA
+  NEXUS_IMAGE_URI: $AWS_IMAGE_REGISTRY/$NEXUS_IMAGE_TAG
+  TCP_IMAGE: tribeplatform/cli:0.2.0
+  IMAGE_REPO: nexus-signup
+  NODE_OPTIONS: '--max-old-space-size=13192'
+  VALIDATE_GQL_SCHEMA: 'false'
+  IMAGE_LABELS: >
+    --label org.opencontainers.image.vendor=$CI_SERVER_URL/$GITLAB_USER_LOGIN
+    --label org.opencontainers.image.authors=$CI_SERVER_URL/$GITLAB_USER_LOGIN
+    --label org.opencontainers.image.revision=$CI_COMMIT_SHA
+    --label org.opencontainers.image.source=$CI_PROJECT_URL
+    --label org.opencontainers.image.documentation=$CI_PROJECT_URL
+    --label org.opencontainers.image.licenses=$CI_PROJECT_URL
+    --label org.opencontainers.image.url=$CI_PROJECT_URL
+    --label vcs-url=$CI_PROJECT_URL
+    --label com.gitlab.ci.user=$CI_SERVER_URL/$GITLAB_USER_LOGIN
+    --label com.gitlab.ci.email=$CI_GITLAB_USER_EMAIL
+    --label com.gitlab.ci.tagorbranch=$CI_COMMIT_REF_NAME
+    --label com.gitlab.ci.pipelineurl=$CI_PIPELINE_URL
+    --label com.gitlab.ci.commiturl=$CI_PROJECT_URL/commit/$CI_COMMIT_SHA
+    --label com.gitlab.ci.cijoburl=$CI_JOB_URL
+    --label com.gitlab.ci.mrurl=$CI_PROJECT_URL/-/merge_requests/$CI_MERGE_REQUEST_ID
+
+# ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍ Workflow ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍
+.defaultBranchWorkflow:
+  if: "$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH && $CI_COMMIT_TITLE != \"Update CHANGELOG.md unreleased section\" && $CI_COMMIT_TITLE !~ /Merge branch 'release\\//"
+  variables:
+    IS_DEFAULT: 'yes'
+
+.tagWorkflow:
+  if: "$CI_COMMIT_TAG"
+  variables:
+    IS_TAG: 'yes'
+
+.mergeRequestWorkflow:
+  if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_NAME !~ /^(hotfix|release)\/(.*)$/'
+  variables:
+    IS_MR: 'yes'
+
+.hotfixWorkflow:
+  if: '$CI_COMMIT_REF_NAME =~ /^hotfix\\/([0-9]+\.){2}[0-9]+$/'
+  variables:
+    IS_HOTFIX: 'yes'
+
+
+# This flow is for testing pipeline changes in a dedicated branch
+# e.g., feat/gitlab-ci
+.testBranchWorkflow:
+  if: '$CI_COMMIT_REF_NAME == "feat/gitlab-ci"'
+  variables:
+    IS_TEST: 'yes'
+
+workflow:
+  rules:
+    - !reference [.tagWorkflow]
+    - !reference [.defaultBranchWorkflow]
+    - !reference [.mergeRequestWorkflow]
+    - !reference [.hotfixWorkflow]
+    - !reference [.testBranchWorkflow]
+    - when: never
+
+# ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍ Pipeline Stages ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍
+# ╭─ Pre ───────────────────────────────────────────────╮
+# ├───/cache ───────────────────────────────────────────
+prepare:cache:
+  stage: pre
+  extends:
+    - .commonProperty
+  script:
+    - |
+      if [[ -d node_modules ]]; then
+        echo "Cache exists. Skipping..."
+        exit 10
+      fi
+    - pnpm install --frozen-lockfile
+  allow_failure:
+    exit_codes: 10
+# 
+# ├───/env ────────────────────────────────────────────
+prepare:env:
+  stage: pre
+  image:
+    name: fsha/release-utils:1.2.1
+    entrypoint:
+      - ''
+  extends:
+    - .commonProperty
+    - .disableCache
+  script:
+    # Local versioning & changelog ────────────────────────────────
+    - |
+      echo -e "Preparing build metadata for nexus-signup...\n"
+
+      # Since this is a single-app repo, we don't need changelog scripts.
+      # Use a simple fixed semver plus pipeline ID to make each build unique.
+      semver="0.1.0"
+      build_version="${semver}-${CI_PIPELINE_IID}"
+
+      changelog="nexus-signup ${semver} (build ${CI_PIPELINE_IID}) - commit ${CI_COMMIT_SHORT_SHA}"
+
+      echo "NEXUS_SIGNUP_BUILD_VERSION=$build_version" >> build.env
+      echo "NEXUS_SIGNUP_CHANGELOG=$changelog" >> build.env
+
+      echo -e "Version: $semver"
+      echo -e "Build version: $build_version"
+      echo -e "Changelog: $changelog\n"
+
+    # package image hash + existence detection logic ───────────────
+    - |
+      echo -e "Calculating package image details...."
+      checksum=$(sha256sum pnpm-lock.yaml stack/docker/Dockerfile.package)
+      package_hash=$(echo $checksum | sha256sum | cut -d ' ' -f 1)
+      image_name=nexus-signup:packages-$package_hash
+      package_image_uri=$CI_REGISTRY_IMAGE/$image_name
+
+      echo -e "Package image details:\n"
+      echo -e "   - Checksum: $checksum\n"
+      echo -e "   - Hash: $package_hash\n"
+      echo -e "   - URI: $package_image_uri\n"
+
+      echo "PACKAGE_HASH=$package_hash" >> build.env
+      echo "PACKAGE_IMAGE_NAME=$image_name" >> build.env
+      echo "PACKAGE_IMAGE_URI=$package_image_uri" >> build.env
+
+      # Kaniko auth for GitLab registry
+      cat $KANIKO_AUTH_CONFIG_FILE > /root/.docker/config.json
+
+      result=$(docker manifest inspect $package_image_uri || true)
+      if [[ $result ]]; then
+        echo -e "   - Package image exists in GitLab container registry.\n"
+        echo "PACKAGE_IMAGE_EXISTS=true" >> build.env
+      fi
+
+      result=$(docker manifest inspect $NEXUS_IMAGE_URI || true)
+      if [[ $result ]]; then
+        echo -e "   - Nexus image exists in ECR.\n"
+        echo "NEXUS_IMAGE_EXISTS=true" >> build.env
+      fi
+
+      echo -e "\nFinal build.env:\n"
+      cat build.env
+  artifacts:
+    reports:
+      dotenv: build.env
+
+# ├───/base-image ────────────────────────────────────
+prepare:base-image:
+  stage: pre
+  extends:
+    - .commonProperty
+    - .disableCache
+  needs:
+    - prepare:env
+  variables:
+  # $BASE_NODEJS_IMAGE seems copied from the tribe-api project. It'ss NOT built in this repository and NOT owned here.
+  # Unless this was intentional, create a Dockerfile under stack/docker/Dockerfile.base,
+  # authenticate to *this project's* GitLab container registry, build & push it manually, and update this variable accordingly.
+    BASE_NODEJS_IMAGE: registry.gitlab.com/tribeplatform/tribe-api/node22-rockylinux9/amd64:20250724-2
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint:
+      - ''
+  script:
+    - |
+      if [[ $PACKAGE_IMAGE_EXISTS ]]; then
+        echo "Image already exists. Skipping..."
+        exit 0
+      fi
+      echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n $CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD | base64)\"}}}" > /kaniko/.docker/config.json
+      /kaniko/executor --snapshotMode=time --single-snapshot --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/stack/docker/Dockerfile.package --destination $PACKAGE_IMAGE_URI  --build-arg=BASE_IMAGE=$BASE_NODEJS_IMAGE
+
+# ╰───────────────────────────────────────────────────╯
+# ╭─ build ──────────────────────────────────────────────╮
+# ├───/compile ─────────────────────────────────────────
+build:compile:
+  stage: build
+  needs:
+    - prepare:env
+    - job: prepare:cache
+      artifacts: false
+  extends:
+    - .commonProperty
+    - .onlyPullCache
+  variables:
+    ASSET_PREFIX: "$CDN_DOMAIN/nexus-signup/$NEXUS_SIGNUP_BUILD_VERSION/assets"
+    BASE_PATH: "/nexus-signup"
+  script:
+    - pnpm build
+  cache:
+    - !reference [.onlyPullCache, cache]
+  artifacts:
+    paths:
+      - .next/
+      - public/
+      - $CI_PROJECT_DIR/**/.env
+    expire_in: 1 hour
+
+  rules:
+    # Build on default branch and tags
+    - if: $IS_DEFAULT || $IS_TAG || $IS_TEST
+
+# ├───/image ───────────────────────--────────────────
+build:image:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint:
+      - ''
+  extends:
+    - .commonProperty
+    - .onlyPullCache
+  needs:
+    - prepare:env
+    - prepare:base-image
+    - job: build:compile
+      artifacts: false
+  script:
+    - |
+      # If prepare:env detected an existing image in ECR, do nothing
+      if [[ $NEXUS_IMAGE_EXISTS ]]; then
+        echo "Nexus image already exists in ECR (tag: $NEXUS_IMAGE_TAG). Skipping build & push..."
+        exit 0
+      fi
+
+      cat $KANIKO_AUTH_CONFIG_FILE > /kaniko/.docker/config.json
+      /kaniko/executor \
+        --snapshotMode=time \
+        --single-snapshot \
+        --context $CI_PROJECT_DIR \
+        --dockerfile $CI_PROJECT_DIR/stack/docker/Dockerfile \
+        --destination $NEXUS_IMAGE_URI \
+        --build-arg CACHE_IMAGE=$PACKAGE_IMAGE_URI
+  rules:
+    - if: $IS_DEFAULT || $IS_TAG || $IS_TEST
+
+# ╰───────────────────────────────────────────────────╯
+
+# ╭─ test ──────────────────────────────────────────────╮
+# ├───/lint ───────────────────────────────────────────
+lint:
+  stage: test
+  extends:
+    - .testTemplate
+  script:
+    - pnpm lint
+# ├───/typecheck ──────────────────────────────────────
+typecheck:
+  stage: test
+  extends:
+    - .testTemplate
+  script:
+    - pnpm typecheck
+# ╰───────────────────────────────────────────────────╯
+
+# ╭─ Publish ─────────────────────────────────────────╮
+# ├───/static assets (Next) ─────────────────────────╮
+publish:static-assets:
+  stage: publish
+  extends:
+    - .publishAssetsTemplate
+  variables:
+    BUILD_VERSION: $NEXUS_SIGNUP_BUILD_VERSION
+    LOCAL_BUILD_PATH: /.next/static
+    REMOTE_BUILD_PATH: /nexus-signup/$NEXUS_SIGNUP_BUILD_VERSION/assets
+  needs:
+    - job: build:compile
+  rules:
+    - if: $IS_DEFAULT || $IS_TEST
+
+# ├───/public assets ────────────────────────────────╮
+publish:public-assets:
+  stage: publish
+  extends:
+    - .publishAssetsTemplate
+  variables:
+    BUILD_VERSION: $NEXUS_SIGNUP_BUILD_VERSION
+    LOCAL_BUILD_PATH: /public
+    REMOTE_BUILD_PATH: /nexus-signup/$NEXUS_SIGNUP_BUILD_VERSION/public
+  needs:
+    - job: build:compile
+    - job: build:image
+      artifacts: false
+  rules:
+    - if: $IS_DEFAULT || $IS_TEST
+# ╰───────────────────────────────────────────────────╯
+
+
+# ╭─ deploy:dev ────────────────────────────────────╮
+# ├───/deploy:development ──────────────────────────╮
+deploy:development:
+  stage: deploy:dev
+  extends:
+    - .deployCommonProperty
+  rules:
+    # Deploy to dev on default branch (main/master)
+    - if: $IS_DEFAULT
+
+  script:
+    - ops init -i -e devops@bettermode.com -u $OPS_USERNAME -p $OPS_PASSWORD
+    - ops service deploy -s $SERVICE -i $NEXUS_IMAGE_URI -r us -e dev
+# ╰───────────────────────────────────────────────────╯
+
+# ╭─ deploy:prod ────────────────────────────────────╮
+# ├───/deploy:production ───────────────────────────╮
+deploy:production:us:
+  stage: deploy:prod
+  extends:
+    - .deployCommonProperty
+  rules:
+    # Deploy to prod only on tags
+    - if: $IS_TAG
+
+  script:
+    - ops init -i -e devops@bettermode.com -u $OPS_USERNAME -p $OPS_PASSWORD
+    - ops service deploy -s $SERVICE -i $NEXUS_IMAGE_URI -r us -e prd
+# ╰───────────────────────────────────────────────────╯

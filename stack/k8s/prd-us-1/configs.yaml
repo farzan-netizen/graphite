@@ -1,0 +1,53 @@
+nexus-signup:
+  web:
+    enabled: true
+    nodeInstanceFamily: "m7a"
+    autoscaling:
+      minReplicas: 2
+      maxReplicas: 3
+      targetMemoryUtilizationPercentage: 85
+      scaleUpType: Pods
+      scaleUpValue: 2
+      scaleUpPeriodSeconds: 30
+      scaleUpStabilizationWindowSeconds: 90
+      scaleUpSelectPolicy: Min
+      scaleDownType: Pods
+      scaleDownValue: 5
+      scaleDownPeriodSeconds: 30
+      scaleDownStabilizationWindowSeconds: 120
+      scaleDownSelectPolicy: Min
+    healthCheck:
+      enabled: true
+      type: http
+    resources:
+      requests:
+        cpu: 0.1
+        memory: 600Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+    env:
+      - name: NODE_OPTIONS
+        value: '--max-old-space-size=384 --max-semi-space-size=64'
+    linkerd:
+      enabled: true
+    disruptionBudget:
+      enabled: true
+      maxUnavailable: 50%
+  configs:
+    environment: production
+    name: nexus-signup
+    secrets:
+      enabled: true
+      configName: prd_us_nexus_signup_service
+    monitoring:
+      enabled: true
+    image:
+      command:
+        - pnpm
+        - start
+  hooks:
+    migration:
+      enabled: false # Double check with dev to see if a migration is needed
+  worker:
+    enabled: false

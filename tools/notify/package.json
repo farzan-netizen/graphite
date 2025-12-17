@@ -1,0 +1,16 @@
+{
+  "name": "notify",
+  "version": "1.0.0",
+  "description": "Slack notification tool for CI/CD releases",
+  "type": "module",
+  "main": "notify.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "yargs": "^17.7.2"
+  },
+  "private": true
+}
+

@@ -1,0 +1,315 @@
+# # ╭─[local templates] ────────────────────────────────╮
+# # │
+# .deployNexusSignupTemplate:
+#   extends:
+#     - .env.nexus-signup.build
+#     - .deployTemplate
+#   before_script:
+#     - |
+#       if [[ $FREEZE_NEXUS_SIGNUP_DEPLOYMENTS ]]; then
+#         if [[ ! $CI_JOB_MANUAL ]]; then
+#           export FREEZED=true
+#         fi
+#       fi
+#   needs: &deploy-needs
+#     - prepare:env
+#     - nexus-signup:build
+#     - job: nexus-signup:publish:assets
+#       artifacts: false
+#     - job: nexus-signup:publish:image
+#       artifacts: false
+# # ├───────────────────────────────────────────────────
+# .notifyNexusSignupTemplate:
+#   extends:
+#     - .notifyTemplate
+#   variables:
+#     PRODUCT_NAME: Nexus Signup
+#     CHANGELOG: "$NEXUS_SIGNUP_CHANGELOG"
+#   rules:
+#     - if: $IS_DEFAULT
+#     - if: $IS_HOTFIX_NEXUS_SIGNUP
+# # │
+# # ╰───────────────────────────────────────────────────╯
+
+# # ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍ Pipeline Stages ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍
+# # ╭─ Build ───────────────────────────────────────────╮
+# # │
+# nexus-signup:build:
+#   extends:
+#     - .buildTemplate
+#     - .env.nexus-signup.build
+#   rules:
+#     - if: $IS_DEFAULT
+#     - if: $IS_HOTFIX_NEXUS_SIGNUP
+#     - if: $IS_MR
+#       when: manual
+#       allow_failure: true
+# # ├───/review ────────────────────────────────────────
+# nexus-signup:build:review:
+#   retry: 2
+#   extends:
+#     - nexus-signup:build
+#     - .env.nexus-signup.review
+#   rules:
+#     - if: $IS_MR
+# # │
+# # ╰───────────────────────────────────────────────────╯
+
+# # ╭─ Publish ─────────────────────────────────────────╮
+# # ├───/assets ────────────────────────────────────────
+# # │
+# nexus-signup:publish:assets:
+#   retry: 2
+#   extends:
+#     - .publishAssetsTemplate
+#   variables:
+#     BUILD_VERSION: $NEXUS_SIGNUP_BUILD_VERSION
+#     LOCAL_BUILD_PATH: /.next
+#     REMOTE_BUILD_PATH: /nexus-signup/$NEXUS_SIGNUP_BUILD_VERSION/assets
+#   needs:
+#     - prepare:env
+#     - nexus-signup:build
+#     - job: hotfix
+#       optional: true
+#       artifacts: false
+#   rules:
+#     - if: $IS_DEFAULT
+#     - if: $IS_HOTFIX_NEXUS_SIGNUP
+# # │
+# # ├───/image ─────────────────────────────────────────
+# # │
+# nexus-signup:publish:image:
+#   retry: 2
+#   extends:
+#     - .publishImageTemplate
+#     - .env.nexus-signup.common
+#     - .env.nexus-signup.dev
+#   needs:
+#     - prepare:env
+#     - job: prepare:base-image
+#       artifacts: false
+#     - nexus-signup:build
+#     - job: hotfix
+#       optional: true
+#       artifacts: false
+#   rules:
+#     - if: $IS_DEFAULT
+#     - if: $IS_HOTFIX_NEXUS_SIGNUP
+# # │
+# # ╰───────────────────────────────────────────────────╯
+# #
+# # ╭─ Intermediate Triggers ───────────────────────────╮
+# # ├───/review ────────────────────────────────────────
+# # │
+# nexus-signup:review:
+#   stage: trigger
+#   extends:
+#     - .publishTemplate
+#     - .env.nexus-signup.review
+#   needs:
+#     - job: nexus-signup:build:review
+#       artifacts: false
+#   script:
+#     - echo "Publishing Nexus Signup App for review ➞ $CI_ENVIRONMENT_NAME"
+#   rules:
+#     - if: $NEXUS_SIGNUP_REVIEW_AUTO_DEPLOY
+#       when: never
+#     - if: $IS_MR
+#       when: manual
+#       allow_failure: true
+# # │
+# # ╰───────────────────────────────────────────────────╯
+# #
+# # ╭─ K8s Deployments ─────────────────────────────────╮
+# # ├───/dev ───────────────────────────────────────────
+# # │
+# nexus-signup:deploy:dev:
+#   retry: 2
+#   stage: deploy:dev
+#   extends:
+#     - .deployNexusSignupTemplate
+#     - .env.nexus-signup.dev
+#   variables:
+#     RETRY_SCHEMA_IF_ALREADY_RESOLVED: "false"
+#   rules:
+#     - if: $IS_DEFAULT && $FREEZE_NEXUS_SIGNUP_DEPLOYMENTS
+#       when: manual
+#     - if: $IS_DEFAULT
+
+# # │
+# # ├───/promote ────────────────────────────────────────
+# # │
+# nexus-signup:promote:
+#   extends:
+#     - .promoteTemplate
+#   variables:
+#     LOCAL_PACKAGE_NAME: nexus-signup
+#   needs:
+#     - job: nexus-signup:publish:assets
+#       artifacts: false
+#     - job: nexus-signup:publish:image
+#       artifacts: false
+#   rules:
+#     - if: $IS_DEFAULT
+#       when: manual
+#     - if: $IS_HOTFIX_NEXUS_SIGNUP
+#       when: manual
+# # │
+# # ├───/image:prod ────────────────────────────────────
+# # │
+# nexus-signup:publish:image:prod:
+#   stage: publish:prod
+#   extends:
+#     - .publishImageTemplate
+#     - .env.nexus-signup.common
+#     - .env.nexus-signup.prod
+#   needs:
+#     - prepare:env
+#     - job: prepare:base-image
+#       artifacts: false
+#     - nexus-signup:build
+#     - job: hotfix
+#       optional: true
+#       artifacts: false
+#     - job: nexus-signup:promote
+#   rules:
+#     - if: $IS_DEFAULT
+#     - if: $IS_HOTFIX_NEXUS_SIGNUP
+
+# # │
+# # ├───/production ────────────────────────────────────
+# # │
+# nexus-signup:deploy:prod:
+#   retry: 2
+#   stage: deploy:prod
+#   extends:
+#     - .deployNexusSignupTemplate
+#     - .env.nexus-signup.prod
+#   needs:
+#     - *deploy-needs
+#     - job: nexus-signup:publish:image:prod
+#       artifacts: false
+#   rules:
+#     - if: $IS_DEFAULT
+#     # when: manual # Delegated to promote
+#     - if: $IS_HOTFIX_NEXUS_SIGNUP
+#       # when: manual # Delegated to promote
+# # │
+# # ├───/reviews (image) ──────────────────────────────
+# # │
+# nexus-signup:publish:image:review:
+#   retry: 2
+#   extends:
+#     - .publishImageTemplate
+#     - .env.nexus-signup.common
+#     - .env.nexus-signup.review
+#   needs:
+#     - prepare:env
+#     - job: prepare:base-image
+#       artifacts: false
+#     - job: nexus-signup:build:review
+#       artifacts: false
+#     - job: nexus-signup:review
+#       artifacts: false
+#   rules:
+#     - if: $IS_MR
+# # │
+# # ├───/reviews (deploy) ──────────────────────────────
+# # │
+# nexus-signup:deploy:review:
+#   retry: 2
+#   extends:
+#     - .deployNexusSignupTemplate
+#     - .env.nexus-signup.review
+#   stage: deploy:review
+#   needs:
+#     - job: nexus-signup:build:review
+#       artifacts: false
+#     - job: nexus-signup:review
+#       artifacts: false
+#     - job: nexus-signup:publish:image:review
+#       artifacts: false
+#   environment:
+#     name: review/$CI_COMMIT_REF_NAME
+#     url: https://$CI_ENVIRONMENT_SLUG.feature.bettermode.dev
+#     on_stop: nexus-signup:stop:review
+#     auto_stop_in: 2 week
+#   script:
+#     - ops init -i -e devops@bettermode.com -u $OPS_USERNAME -p $OPS_PASSWORD
+#     - ops feature deploy -n $REVIEW_APP_NAME -i $AWS_IMAGE_REGISTRY/$SERVICE_IMAGE_TAG -b $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+#   after_script:
+#     - |
+#       if [[ ! $NEXUS_SIGNUP_REVIEW_AUTO_DEPLOY ]]; then
+#         curl -s --request POST --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
+#         "$CI_API_V4_URL/projects/$CI_PROJECT_ID/variables" --form "key=NEXUS_SIGNUP_REVIEW_AUTO_DEPLOY" --form "environment_scope=$CI_ENVIRONMENT_NAME" --form "value=true" --form "protected=false"
+#       fi
+#   rules:
+#     - if: $IS_MR
+#       when: manual
+# # │
+# # ├───/reviews (stop) ────────────────────────────────
+# # │
+# nexus-signup:stop:review:
+#   retry: 2
+#   extends:
+#     - .deployNexusSignupTemplate
+#     - .env.nexus-signup.review
+#   stage: stop:review
+#   needs:
+#     - job: nexus-signup:deploy:review
+#       artifacts: false
+#   environment:
+#     name: review/$CI_COMMIT_REF_NAME
+#     action: stop
+#   variables:
+#     GIT_STRATEGY: none
+#   before_script:
+#     - |
+#       if [[ $NEXUS_SIGNUP_REVIEW_AUTO_DEPLOY ]]; then
+#         curl --request DELETE --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
+#         "$CI_API_V4_URL/projects/$CI_PROJECT_ID/variables/NEXUS_SIGNUP_REVIEW_AUTO_DEPLOY" --data-urlencode "filter[environment_scope]=$CI_ENVIRONMENT_NAME"
+
+#         echo "Removed auto-deploy flag for $CI_ENVIRONMENT_NAME environment"
+#       fi
+#   script:
+#     - ops init -i -e devops@bettermode.com -u $OPS_USERNAME -p $OPS_PASSWORD
+#     - ops feature delete -n $REVIEW_APP_NAME
+#   rules:
+#     - if: $IS_MR
+#       when: manual
+#       allow_failure: true
+# # │
+# # ╰───────────────────────────────────────────────────╯
+# #
+# # ╭─ Release Notifications ───────────────────────────╮
+# # ├───/dev ───────────────────────────────────────────
+# # │
+# nexus-signup:notify:dev:
+#   extends:
+#     - .notifyNexusSignupTemplate
+#   needs:
+#     - prepare:env
+#     - nexus-signup:build
+#     - nexus-signup:deploy:dev
+#   variables:
+#     RELEASE_CHANNEL: Dev
+#     ACTIONS: nexus-signup:deploy:dev/Dev/Re-deploy to Dev 🔄,nexus-signup:promote/Prod/Promote to Production 🎉
+#     SKIP_NOTIFY: $NEXUS_SIGNUP_BUILD_REUSED
+#   rules:
+#     - if: $IS_DEFAULT
+# # │
+# # ├───/production ────────────────────────────────────
+# # │
+# nexus-signup:notify:prod:
+#   extends:
+#     - .notifyNexusSignupTemplate
+#   needs:
+#     - prepare:env
+#     - nexus-signup:deploy:prod
+#   variables:
+#     RELEASE_CHANNEL: Prod
+#     ACTIONS: nexus-signup:deploy:prod/Prod/Re-deploy to Prod 🔄
+# # │
+# # ╰───────────────────────────────────────────────────╯
+# # ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍
+

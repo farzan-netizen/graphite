@@ -1,0 +1,16 @@
+nexus-signup:
+  configs:
+    environmentVariables:
+      data:
+        REGION: us-east-1
+        SERVICE: nexus-signup
+        PORT: '80'
+        RELEASE_CHANNEL: development
+        GQL_GLOBAL_ENDPOINT: 'https://api.bettermode.dev/global'
+        BRAND_FETCH_BASE_URL: 'https://api.brandfetch.io/v2/brands'
+        NEXT_PUBLIC_RECAPTCHA_SITE_KEY: '6Le1NbUpAAAAAA5wJuN6rLHd7x3hOSCLnK0i8cI4'
+        NEXT_PUBLIC_ENABLE_RECAPTCHA: 'true'
+        LOG_LEVEL: 'warn'
+        # TODO: update based on the url of the app
+        REDIRECT_DOMAIN_ALLOWLIST: 'app.bettermode.dev'
+        SSOS_CALLBACK_URL: 'https://app.bettermode.dev/api/auth/sso-redirect'

@@ -1,0 +1,11 @@
+apiVersion: v2
+appVersion: 0.16.0
+dependencies:
+  - alias: nexus-signup
+    name: core
+    repository: https://gitlab.com/api/v4/projects/25662095/packages/helm/stable
+    version: 7.0.1
+description: A package for SweetOps core services
+name: sweetops-core
+type: application
+version: 0.0.4

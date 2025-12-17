@@ -1,0 +1,20 @@
+Part,Step Number,Step Name,Field Name,Data Type,Description,Example Value,Required,Validation Rules,Store Location,Notes
+Auth,1,Authentication,email,string,User email address,user@example.com,Yes,Valid email format,signup.form,Only domain logged for analytics
+Auth,1,Authentication,authMethod,enum,Authentication method,email or google,Yes,Must be email or google,signup.authMethod,OTP used for email (not password)
+Main,1,Basic Info,firstName,string,First name,John,Yes,Non-empty,signup.form,Prefilled from email/Google
+Main,1,Basic Info,lastName,string,Last name,Doe,Yes,Non-empty,signup.form,Prefilled from email/Google
+Main,2,Industry,industry,string,User's industry,SAAS,Yes,From predefined list,signup.form,Auto-detected via Brandfetch
+Main,3,Role,role,string,User role,COMMUNITY_MANAGER,Yes,From predefined list,signup.form,Can be predefined or custom from search
+Main,4,Integrations,integrations,string[],List of selected integrations,"[slack, zapier]",No,Valid integration IDs (19 total),signup.form,Can be empty array (skip allowed)
+Main,5,Enterprise Features,wantsEnterpriseSupport,boolean,User requested enterprise support,true or false,Yes,Boolean,signup.form,Conditional step
+Main,5,Enterprise Features,enterpriseFeatures,string[],Selected enterprise features,"[saml-sso, data-residency]",No,Valid feature IDs (8 total),signup.form,Only if wantsEnterpriseSupport=true
+Main,6,Community Name,communityName,string,New community name,Acme Community,Conditional,Min 2 chars,signup.form,Required if creating new
+Main,6,Community Name,existingCommunityUrl,string,Migration URL,https://old.com,Conditional,Valid URL,signup.form,Required if migrating
+Wizard,1,Objectives,objectives,string[],Selected objectives,"[leads-referrals, retention]",Yes,Min 1 objective (6 total),wizard.form,Multiple selection allowed
+Wizard,2,Branding,websiteUrl,string,Website URL for auto-detect,https://acme.com,No,Valid URL,wizard.form,Used for Brandfetch
+Wizard,2,Branding,logoUrl,string | null,Logo URL or null,https://logo.clearbit.com/acme.com,No,Valid URL or null,wizard.form,Auto-detected or manual
+Wizard,2,Branding,primaryColor,string,Primary brand color (hex),#6366f1,Yes,Valid hex color,wizard.form,Default: #6366f1
+Wizard,2,Branding,previewTheme,enum,Preview theme,light or dark,Yes,Must be light or dark,wizard.form,Default: light
+Wizard,3,Spaces,spaces,string[],Selected spaces,"[feed, discussions, events]",Yes,Min 2 spaces (14 total),wizard.form,At least 2 required
+Wizard,4,Plan Selection,billingPeriod,enum,Billing period,annual or monthly,Yes,Must be annual or monthly,wizard.form,Default: annual
+Wizard,4,Plan Selection,selectedPlan,string,Selected plan,starter or growth or enterprise,Yes,Valid plan ID,wizard.form,Based on recommendation

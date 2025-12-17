@@ -1,0 +1,22 @@
+#######################################################
+# Global Cache configuration for the repository, this configuration will be
+# used by default by all jobs
+#######################################################
+cache: &global_cache
+  key:
+    files:
+      - pnpm-lock.yaml
+      - stack/docker/Dockerfile.package
+  paths:
+    - node_modules/
+    - "**/node_modules/"
+  policy: pull-push
+
+.disableCache:
+  cache: {}
+
+.onlyPullCache:
+  cache:
+    <<: *global_cache
+    policy: pull
+
