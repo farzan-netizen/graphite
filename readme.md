@@ -15,7 +15,6 @@ feature-1 ──► wait... ──► merged ──► feature-2 ──► wait.
 ```
 
 **Graphite:** Work on dependent features in parallel.
-
 ```
 main
  ├── feature-1 (Posts Data)
