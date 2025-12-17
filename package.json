@@ -1,0 +1,17 @@
+{
+    "name": "graphite-react-demo",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Demo for Graphite CLI stacking",
+    "dependencies": {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    },
+    "devDependencies": {
+        "vite": "^4.0.0"
+    },
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    }
+}
